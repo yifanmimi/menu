@@ -3,59 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 自動辨識訂餐系統</title>
+    <title>🍱 午餐點餐系統</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; }
-        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        h2 { margin-top: 0; color: #333; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 20px auto; padding: 15px; background-color: #f9f9f9; }
+        .section { background: white; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; }
+        button { background-color: #4CAF50; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; }
         button:hover { background-color: #45a049; }
-        input, select { width: 100%; padding: 8px; margin: 5px 0 15px 0; box-sizing: border-box; }
-        .loading { color: blue; font-weight: bold; display: none; }
+        input, select { width: 100%; padding: 10px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        .loading { color: #666; font-style: italic; text-align: center; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>🍱 智慧午餐訂購系統</h1>
-
     <div class="section">
-        <h2>1. 管理員：上傳/拍照更新菜單</h2>
-        <input type="file" id="menuImage" accept="image/*">
-        <button id="uploadBtn">上傳並讓 AI 辨識菜單</button>
-        <p id="uploadStatus" class="loading">AI 正在辨識菜單中，請稍候...</p>
+        <h2>今日餐廳資訊</h2>
+        <p><strong>🏪 餐廳名稱：</strong><span id="restName">確認中...</span></p>
+        <p><strong>📝 備註說明：</strong><span id="restNote">無</span></p>
     </div>
 
     <div class="section">
-        <h2>2. 餐廳資訊</h2>
-        <p><strong>餐廳名稱：</strong><span id="restName">載入中...</span></p>
-        <p><strong>備註說明：</strong><span id="restNote">載入中...</span></p>
-    </div>
+        <h2>我要訂餐</h2>
+        <label for="userName">👤 訂購人姓名：</label>
+        <input type="text" id="userName" placeholder="請輸入您的姓名">
 
-    <div class="section">
-        <h2>3. 我要訂餐</h2>
-        <label for="userName">訂購人姓名：</label>
-        <input type="text" id="userName" placeholder="請輸入姓名">
-
-        <label for="menuSelect">選擇餐點：</label>
+        <label for="menuSelect">🍔 選擇餐點：</label>
         <select id="menuSelect">
             <option value="">-- 請選擇餐點 --</option>
         </select>
 
-        <label for="itemCount">份數：</label>
+        <label for="itemCount">🔢 份數：</label>
         <input type="number" id="itemCount" value="1" min="1">
 
-        <label for="orderNote">備註（如：去冰、不辣）：</label>
-        <input type="text" id="orderNote" placeholder="選填">
+        <label for="orderNote">💡 備註：</label>
+        <input type="text" id="orderNote" placeholder="例：去冰、不辣、飯少">
 
         <button id="submitBtn">送出訂單</button>
-        <p id="orderStatus" class="loading">訂單傳送中...</p>
+        <p id="orderStatus" class="loading">正在傳送訂單至試算表...</p>
     </div>
 
     <script>
-        // ⚠️ 請替換成你部署好的 Google GAS Web App URL ⚠️
+        // ⚠️ 請填入你的 GAS 網頁應用程式 URL
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLlW-KcoAhDqZO4g9nrR3XYdKXpXDx2RwEnMGrAMSlM806DMuiwKr7na8IBB8geIBPcg/exec";
 
-        // 頁面載入時，自動獲取目前試算表中的餐廳資訊與菜單
         window.onload = function() {
             fetchMenuAndInfo();
         };
@@ -72,7 +62,7 @@
                     document.getElementById("restNote").innerText = data.note || "無";
                     
                     const select = document.getElementById("menuSelect");
-                    select.innerHTML = '<option value="">-- 請選擇餐點 --</option>'; // 清空
+                    select.innerHTML = '<option value="">-- 請選擇餐點 --</option>';
                     
                     data.menu.forEach(item => {
                         const opt = document.createElement("option");
@@ -85,43 +75,6 @@
             });
         }
 
-        // 管理員上傳菜單照片
-        document.getElementById("uploadBtn").onclick = function() {
-            const fileInput = document.getElementById("menuImage");
-            if (fileInput.files.length === 0) {
-                alert("請先選擇或拍攝菜單照片！");
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            document.getElementById("uploadStatus").style.display = "block";
-
-            reader.onloadend = function() {
-                const base64Data = reader.result;
-                
-                fetch(GAS_WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "uploadMenu",
-                        image: base64Data
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById("uploadStatus").style.display = "none";
-                    if (data.status === "success") {
-                        alert("菜單辨識成功並已更新至試算表！");
-                        fetchMenuAndInfo(); // 重新整理網頁選單
-                    } else {
-                        alert("辨識失敗: " + data.message);
-                    }
-                });
-            };
-            reader.readAsDataURL(file);
-        };
-
-        // 員工送出訂單
         document.getElementById("submitBtn").onclick = function() {
             const name = document.getElementById("userName").value.trim();
             const select = document.getElementById("menuSelect");
@@ -137,30 +90,22 @@
             const price = parseInt(select.options[select.selectedIndex].dataset.price);
             document.getElementById("orderStatus").style.display = "block";
 
-            const orderData = {
-                name: name,
-                item: item,
-                count: count,
-                price: price,
-                note: note
-            };
-
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
                 body: JSON.stringify({
                     action: "submitOrder",
-                    order: orderData
+                    order: { name, item, count, price, note }
                 })
             })
             .then(res => res.json())
             .then(data => {
                 document.getElementById("orderStatus").style.display = "none";
                 if(data.status === "success") {
-                    alert("訂單送出成功！");
+                    alert("🎉 訂單送出成功！");
                     document.getElementById("userName").value = "";
                     document.getElementById("orderNote").value = "";
                 } else {
-                    alert("送出失敗，請重試");
+                    alert("傳送失敗，請重試");
                 }
             });
         };
