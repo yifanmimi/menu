@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚙️ 訂餐系統後台管理</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 20px auto; padding: 15px; background-color: #f0f4f8; }
+        body { font-family: Arial, sans-serif; max-width: 550px; margin: 20px auto; padding: 15px; background-color: #f0f4f8; }
         .section { background: white; border: 1px solid #d0d7de; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         h2 { margin-top: 0; color: #0366d6; border-bottom: 2px solid #0366d6; padding-bottom: 5px; }
-        button { background-color: #0366d6; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; }
+        button { background-color: #0366d6; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 5px; }
         button:hover { background-color: #0256b4; }
-        input { width: 100%; padding: 10px; margin: 8px 0 20px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
         .loading { color: #0366d6; font-weight: bold; text-align: center; display: none; }
     </style>
 </head>
@@ -18,50 +18,86 @@
 
     <h1>⚙️ 訂餐系統主控台</h1>
 
+    <!-- 新增：直接輸入餐廳資訊 -->
     <div class="section">
-        <h2>📸 步驟 1：拍照建菜單 (Gemini 2.5 Flash)</h2>
+        <h2>🏪 設定今日餐廳說明</h2>
+        <label for="restNameInput">餐廳名稱：</label>
+        <input type="text" id="restNameInput" placeholder="例如：珍蜜排骨飯">
+        
+        <label for="restNoteInput">備註說明：</label>
+        <textarea id="restNoteInput" rows="2" placeholder="例如：請在 10:30 前點餐完畢，大杯飲料加10元"></textarea>
+        
+        <button id="saveInfoBtn">儲存餐廳說明</button>
+        <p id="infoStatus" class="loading">正在更新餐廳資訊...</p>
+    </div>
+
+    <div class="section">
+        <h2>📸 拍照建菜單 (Gemini 2.5 Flash)</h2>
         <label for="menuImage">選擇或拍攝菜單相片：</label>
         <input type="file" id="menuImage" accept="image/*">
         <button id="uploadBtn">上傳並開始 AI 辨識</button>
         <p id="uploadStatus" class="loading">⏳ Gemini 正在辨識菜單並寫入試算表，請稍候...</p>
     </div>
 
-    <div class="section">
-        <h2>💡 提示</h2>
-        <p>1. 上傳完成後，系統會自動清空「菜單」工作表並寫入新資料。</p>
-        <p>2. 記得先在試算表的「餐廳說明」更新 B2 餐廳名稱與 C2 備註，前台網頁才會同步更新喔！</p>
-    </div>
-
     <script>
         // ⚠️ 請填入你的 GAS 網頁應用程式 URL
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLlW-KcoAhDqZO4g9nrR3XYdKXpXDx2RwEnMGrAMSlM806DMuiwKr7na8IBB8geIBPcg/exec";
 
+        // 初始化時，自動抓取現有的餐廳資訊填入輸入框
+        window.onload = function() {
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "getMenuAndInfo" })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    document.getElementById("restNameInput").value = data.restaurantName || "";
+                    document.getElementById("restNoteInput").value = data.note || "";
+                }
+            });
+        };
+
+        // 儲存餐廳說明
+        document.getElementById("saveInfoBtn").onclick = function() {
+            const name = document.getElementById("restNameInput").value.trim();
+            const note = document.getElementById("restNoteInput").value.trim();
+            document.getElementById("infoStatus").style.display = "block";
+
+            fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "updateRestaurantInfo", name: name, note: note })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("infoStatus").style.display = "none";
+                if(data.status === "success") {
+                    alert("🟢 餐廳說明已同步更新至試算表工作表2！");
+                } else {
+                    alert("🔴 更新失敗: " + data.message);
+                }
+            });
+        };
+
+        // 拍照/上傳辨識菜單
         document.getElementById("uploadBtn").onclick = function() {
             const fileInput = document.getElementById("menuImage");
-            if (fileInput.files.length === 0) {
-                alert("請先選擇或拍攝菜單照片！");
-                return;
-            }
+            if (fileInput.files.length === 0) { alert("請先選擇或拍攝菜單照片！"); return; }
 
             const file = fileInput.files[0];
             const reader = new FileReader();
             document.getElementById("uploadStatus").style.display = "block";
 
             reader.onloadend = function() {
-                const base64Data = reader.result;
-                
                 fetch(GAS_WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({
-                        action: "uploadMenu",
-                        image: base64Data
-                    })
+                    body: JSON.stringify({ action: "uploadMenu", image: reader.result })
                 })
                 .then(res => res.json())
                 .then(data => {
                     document.getElementById("uploadStatus").style.display = "none";
                     if (data.status === "success") {
-                        alert("🟢 菜單已成功由 AI 辨識並更新至試算表！");
+                        alert("🟢 菜單已成功由 AI 辨識並更新至試算表工作表1！");
                     } else {
                         alert("🔴 辨識失敗: " + data.message);
                     }
