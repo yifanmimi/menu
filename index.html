@@ -3,67 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍱 午餐點餐系統</title>
+    <title>⚙️ 訂餐系統後台管理</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 15px; background-color: #f9f9f9; }
-        .section { background: white; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; }
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
-        button:hover { background-color: #45a049; }
-        .btn-add { background-color: #008CBA; margin-bottom: 15px; }
-        .btn-submit { width: 100%; padding: 12px; font-size: 16px; margin-top: 10px; }
-        input, select { width: 100%; padding: 10px; margin: 8px 0 15px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
-        .order-row { background: #f2f2f2; padding: 15px; border-radius: 8px; margin-bottom: 10px; position: relative; }
-        .btn-remove { background-color: #f44336; position: absolute; top: 10px; right: 10px; padding: 3px 8px; font-size: 12px; }
-        .loading { color: #666; font-style: italic; text-align: center; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        body { font-family: Arial, sans-serif; max-width: 550px; margin: 20px auto; padding: 15px; background-color: #f0f4f8; }
+        .section { background: white; border: 1px solid #d0d7de; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #0366d6; border-bottom: 2px solid #0366d6; padding-bottom: 5px; }
+        button { background-color: #0366d6; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 5px; }
+        button:hover { background-color: #0256b4; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0 15px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        .loading { color: #0366d6; font-weight: bold; text-align: center; display: none; }
     </style>
 </head>
 <body>
 
+    <h1>⚙️ 訂餐系統主控台</h1>
+
     <div class="section">
-        <h2>今日餐廳資訊 <span id="groupTitle" style="font-size:14px; color:#666;"></span></h2>
-        <p><strong>🏪 餐廳名稱：</strong><span id="restName">確認中...</span></p>
-        <p><strong>📝 備註說明：</strong><span id="restNote">無</span></p>
+        <h2>🏪 設定今日餐廳說明</h2>
+        <label for="restNameInput">餐廳名稱：</label>
+        <input type="text" id="restNameInput" placeholder="例如：珍蜜排骨飯">
+        
+        <label for="restNoteInput">備註說明：</label>
+        <textarea id="restNoteInput" rows="2" placeholder="例如：請在 10:30 前點餐完畢，大杯飲料加10元"></textarea>
+        
+        <button id="saveInfoBtn">儲存餐廳說明</button>
+        <p id="infoStatus" class="loading">正在更新餐廳資訊...</p>
     </div>
 
     <div class="section">
-        <h2>我要訂餐</h2>
-        <label for="userName">👤 訂購人姓名：</label>
-        <input type="text" id="userName" placeholder="請輸入您的姓名">
-
-        <div id="orderItemsContainer">
-            </div>
-
-        <button type="button" class="btn-add" id="addItemRowBtn">➕ 新增品項</button>
-        <button class="btn-submit" id="submitBtn">送出所有訂單</button>
-        <p id="orderStatus" class="loading">正在傳送訂單至試算表...</p>
-    </div>
-
-    <div class="section">
-        <h2>📊 目前即時訂單明細</h2>
-        <button id="refreshOrdersBtn" style="background-color: #888; font-size: 13px; padding: 5px 10px;">🔄 重新整理明細</button>
-        <table id="ordersTable">
-            <thead>
-                <tr>
-                    <th>訂購人</th>
-                    <th>品項</th>
-                    <th>份數</th>
-                    <th>小計</th>
-                    <th>備註</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td colspan="5" style="text-align:center;">載入中...</td></tr>
-            </tbody>
-        </table>
+        <h2>📸 拍照建菜單 (Gemini 2.5 Flash)</h2>
+        <label for="menuImage">選擇或拍攝菜單相片：</label>
+        <input type="file" id="menuImage" accept="image/*">
+        <button id="uploadBtn">上傳並開始 AI 辨識</button>
+        <p id="uploadStatus" class="loading">⏳ Gemini 正在辨識菜單並寫入試算表，請稍候...</p>
     </div>
 
     <script>
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLlW-KcoAhDqZO4g9nrR3XYdKXpXDx2RwEnMGrAMSlM806DMuiwKr7na8IBB8geIBPcg/exec";
-        let globalMenu = [];
 
         // 解析網址中的 ?group=XXX 參數
         const urlParams = new URLSearchParams(window.location.search);
@@ -71,14 +47,10 @@
 
         window.onload = function() {
             if(currentGroup) {
-                document.getElementById("groupTitle").innerText = `(分團代號: ${currentGroup})`;
+                document.querySelector("h1").innerText = `⚙️ 訂餐系統主控台 (分團: ${currentGroup})`;
             }
-            fetchMenuAndInfo();
-            fetchAllOrders();
-        };
-
-        // 抓取餐廳與菜單選單
-        function fetchMenuAndInfo() {
+            
+            // 初始化獲取資料
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
                 body: JSON.stringify({ action: "getMenuAndInfo", group: currentGroup })
@@ -86,113 +58,59 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status === "success") {
-                    document.getElementById("restName").innerText = data.restaurantName || "未設定";
-                    document.getElementById("restNote").innerText = data.note || "無";
-                    globalMenu = data.menu;
-                    createOrderRow();
-                }
-            });
-        }
-
-        // 動態建立餐點選擇欄位
-        function createOrderRow() {
-            const container = document.getElementById("orderItemsContainer");
-            const rowId = "row_" + Date.now();
-            
-            const div = document.createElement("div");
-            div.className = "order-row";
-            div.id = rowId;
-
-            let optionsHtml = '<option value="">-- 請選擇餐點 --</option>';
-            globalMenu.forEach(item => {
-                optionsHtml += `<option value="${item.name}" data-price="${item.price}">${item.name} (${item.price}元)</option>`;
-            });
-
-            div.innerHTML = `
-                <button type="button" class="btn-remove" onclick="document.getElementById('${rowId}').remove()">移除</button>
-                <label>🍟 選擇餐點：</label>
-                <select class="menu-select">${optionsHtml}</select>
-                <label>🔢 份數：</label>
-                <input type="number" class="item-count" value="1" min="1">
-                <label>💡 備註：</label>
-                <input type="text" class="item-note" placeholder="如：去冰、不辣">
-            `;
-            container.appendChild(div);
-        }
-
-        document.getElementById("addItemRowBtn").onclick = createOrderRow;
-
-        // 送出多樣點餐
-        document.getElementById("submitBtn").onclick = function() {
-            const userName = document.getElementById("userName").value.trim();
-            if (!userName) { alert("請輸入您的姓名！"); return; }
-
-            const rows = document.querySelectorAll(".order-row");
-            const orders = [];
-
-            rows.forEach(row => {
-                const select = row.querySelector(".menu-select");
-                const item = select.value;
-                const count = parseInt(row.querySelector(".item-count").value);
-                const note = row.querySelector(".item-note").value.trim();
-                
-                if (item) {
-                    const price = parseInt(select.options[select.selectedIndex].dataset.price);
-                    orders.push({ item, count, price, note });
-                }
-            });
-
-            if (orders.length === 0) { alert("請至少選擇一樣餐點！"); return; }
-
-            document.getElementById("orderStatus").style.display = "block";
-
-            fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "submitOrders", userName: userName, orders: orders, group: currentGroup })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("orderStatus").style.display = "none";
-                if(data.status === "success") {
-                    alert("🎉 所有餐點皆已成功送出！");
-                    document.getElementById("orderItemsContainer").innerHTML = "";
-                    createOrderRow(); 
-                    fetchAllOrders(); 
-                } else {
-                    alert("傳送失敗：" + data.message);
+                    document.getElementById("restNameInput").value = data.restaurantName || "";
+                    document.getElementById("restNoteInput").value = data.note || "";
                 }
             });
         };
 
-        // 抓取全體訂單呈現於表格中
-        function fetchAllOrders() {
+        // 儲存餐廳說明
+        document.getElementById("saveInfoBtn").onclick = function() {
+            const name = document.getElementById("restNameInput").value.trim();
+            const note = document.getElementById("restNoteInput").value.trim();
+            document.getElementById("infoStatus").style.display = "block";
+
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "getAllOrders", group: currentGroup })
+                body: JSON.stringify({ action: "updateRestaurantInfo", name: name, note: note, group: currentGroup })
             })
             .then(res => res.json())
             .then(data => {
-                const tbody = document.querySelector("#ordersTable tbody");
-                tbody.innerHTML = "";
-                if (data.status === "success" && data.orders.length > 0) {
-                    data.orders.forEach(order => {
-                        const tr = document.createElement("tr");
-                        tr.innerHTML = `
-                            <td>${order.name}</td>
-                            <td>${order.item}</td>
-                            <td>${order.count}</td>
-                            <td>${order.totalPrice} 元</td>
-                            <td>${order.note || ''}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                document.getElementById("infoStatus").style.display = "none";
+                if(data.status === "success") {
+                    alert("🟢 餐廳說明已同步更新！");
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">目前尚無任何人點餐</td></tr>';
+                    alert("🔴 更新失敗: " + data.message);
                 }
             });
-        }
+        };
 
-        document.getElementById("refreshOrdersBtn").onclick = fetchAllOrders;
+        // 拍照/上傳辨識菜單
+        document.getElementById("uploadBtn").onclick = function() {
+            const fileInput = document.getElementById("menuImage");
+            if (fileInput.files.length === 0) { alert("請先選擇或拍攝菜單照片！"); return; }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            document.getElementById("uploadStatus").style.display = "block";
+
+            reader.onloadend = function() {
+                fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "uploadMenu", image: reader.result, group: currentGroup })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("uploadStatus").style.display = "none";
+                    if (data.status === "success") {
+                        alert("🟢 菜單已成功由 AI 辨識並更新！");
+                    } else {
+                        alert("🔴 辨識失敗: " + data.message);
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        };
     </script>
 </body>
 </html>
