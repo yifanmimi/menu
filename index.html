@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍱 午餐點餐系統</title>
+    <title>🍱 智慧午餐點餐系統</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 15px; background-color: #f9f9f9; }
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; background-color: #f9f9f9; }
         .section { background: white; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .nav-bar { background: #333; color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-bar select { width: auto; margin: 0; padding: 5px; background: white; color: #333; border-radius: 4px; }
         h2 { margin-top: 0; color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; }
         button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; }
         button:hover { background-color: #45a049; }
@@ -23,25 +25,40 @@
 </head>
 <body>
 
+    <!-- 頂部前台切換列 -->
+    <div class="nav-bar">
+        <span>選擇今日揪團：</span>
+        <select id="groupSelector" onchange="switchGroup(this.value)">
+            <option value="">預設主要團</option>
+            <option value="lunch">中午便當團 (lunch)</option>
+            <option value="drink">下午茶飲料團 (drink)</option>
+            <option value="groupA">A組開團 (groupA)</option>
+            <option value="groupB">B組開團 (groupB)</option>
+        </select>
+    </div>
+
     <div class="section">
-        <h2>今日餐廳資訊 <span id="groupTitle" style="font-size:14px; color:#666;"></span></h2>
+        <h2>今日餐廳資訊 <span id="groupTitle" style="font-size:14px; color:#4CAF50; font-weight:bold;"></span></h2>
         <p><strong>🏪 餐廳名稱：</strong><span id="restName">確認中...</span></p>
         <p><strong>📝 備註說明：</strong><span id="restNote">無</span></p>
     </div>
 
+    <!-- 點餐區塊 -->
     <div class="section">
         <h2>我要訂餐</h2>
         <label for="userName">👤 訂購人姓名：</label>
         <input type="text" id="userName" placeholder="請輸入您的姓名">
 
         <div id="orderItemsContainer">
-            </div>
+            <!-- 動態品項 -->
+        </div>
 
         <button type="button" class="btn-add" id="addItemRowBtn">➕ 新增品項</button>
         <button class="btn-submit" id="submitBtn">送出所有訂單</button>
         <p id="orderStatus" class="loading">正在傳送訂單至試算表...</p>
     </div>
 
+    <!-- 即時明細 -->
     <div class="section">
         <h2>📊 目前即時訂單明細</h2>
         <button id="refreshOrdersBtn" style="background-color: #888; font-size: 13px; padding: 5px 10px;">🔄 重新整理明細</button>
@@ -65,19 +82,28 @@
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwLlW-KcoAhDqZO4g9nrR3XYdKXpXDx2RwEnMGrAMSlM806DMuiwKr7na8IBB8geIBPcg/exec";
         let globalMenu = [];
 
-        // 解析網址中的 ?group=XXX 參數
+        // 讀取與設定目前團別
         const urlParams = new URLSearchParams(window.location.search);
         const currentGroup = urlParams.get('group') || ""; 
 
         window.onload = function() {
-            if(currentGroup) {
-                document.getElementById("groupTitle").innerText = `(分團代號: ${currentGroup})`;
-            }
+            // 自動將下拉選單對齊目前的團別
+            document.getElementById("groupSelector").value = currentGroup;
+            document.getElementById("groupTitle").innerText = currentGroup ? `[目前團別: ${currentGroup}]` : "[目前團別: 預設]";
+            
             fetchMenuAndInfo();
             fetchAllOrders();
         };
 
-        // 抓取餐廳與菜單選單
+        // 前台切換功能：切換選單時自動跳轉網址（不需手動打字）
+        function switchGroup(val) {
+            if (val) {
+                window.location.href = window.location.pathname + "?group=" + val;
+            } else {
+                window.location.href = window.location.pathname;
+            }
+        }
+
         function fetchMenuAndInfo() {
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
@@ -94,11 +120,9 @@
             });
         }
 
-        // 動態建立餐點選擇欄位
         function createOrderRow() {
             const container = document.getElementById("orderItemsContainer");
             const rowId = "row_" + Date.now();
-            
             const div = document.createElement("div");
             div.className = "order-row";
             div.id = rowId;
@@ -122,7 +146,6 @@
 
         document.getElementById("addItemRowBtn").onclick = createOrderRow;
 
-        // 送出多樣點餐
         document.getElementById("submitBtn").onclick = function() {
             const userName = document.getElementById("userName").value.trim();
             if (!userName) { alert("請輸入您的姓名！"); return; }
@@ -164,7 +187,6 @@
             });
         };
 
-        // 抓取全體訂單呈現於表格中
         function fetchAllOrders() {
             fetch(GAS_WEB_APP_URL, {
                 method: "POST",
